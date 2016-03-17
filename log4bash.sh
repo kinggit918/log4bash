@@ -5,7 +5,7 @@
 # Licensed under the MIT license
 # http://github.com/fredpalmer/log4bash
 #--------------------------------------------------------------------------------------------------
-set -e  # Fail on first error
+#set -e  # Fail on first error
 
 # Useful global variables that users may wish to reference
 SCRIPT_ARGS="$@"
@@ -18,10 +18,13 @@ SCRIPT_BASE_DIR="$(cd "$( dirname "$0")" && pwd )"
 # declare -r INTERACTIVE_MODE="$([ tty --silent ] && echo on || echo off)"
 declare -r INTERACTIVE_MODE=$([ "$(uname)" == "Darwin" ] && echo "on" || echo "off")
 
+DEBUG_LOGGING=true
+
 #--------------------------------------------------------------------------------------------------
 # Begin Help Section
 
 HELP_TEXT=""
+
 
 # This function is called in the event of an error.
 # Scripts which source this script may override by defining their own "usage" function
@@ -61,6 +64,12 @@ prepare_log_for_nonterminal() {
     sed "s/[[:cntrl:]]\[[0-9;]*m//g"
 }
 
+# Added by ibeyerlein
+# If function is called, no debug-logging is prited
+no_debug_logging() {
+    DEBUG_LOGGING=false
+}
+
 log() {
     local log_text="$1"
     local log_level="$2"
@@ -69,6 +78,11 @@ log() {
     # Default level to "info"
     [[ -z ${log_level} ]] && log_level="INFO";
     [[ -z ${log_color} ]] && log_color="${LOG_INFO_COLOR}";
+
+    if [[ $DEBUG_LOGGING == false  &&  $log_level == "DEBUG" ]]
+    then
+        return 0
+    fi
 
     echo -e "${log_color}[$(date +"%Y-%m-%d %H:%M:%S %Z")] [${log_level}] ${log_text} ${LOG_DEFAULT_COLOR}";
     return 0;
@@ -104,7 +118,7 @@ log_captains()  {
     else
         log "$1";
     fi
-    
+
     log_speak "$1";
 
     return 0;
